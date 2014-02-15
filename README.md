@@ -1,4 +1,4 @@
-#JSON to Gameplay3D property converter
+#JSON to Gameplay3D Property converter
 
 Gameplay3D uses a bespoke Property format to load plain text data. However, many tools can already export data as JSON and many frameworks/api's exit to read/write it. This tool allows you to convert JSON directly to the Property format.
 
