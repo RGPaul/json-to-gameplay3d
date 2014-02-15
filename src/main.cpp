@@ -164,12 +164,12 @@ int main(int argc, char** argv)
             throw std::exception(errors.c_str());
         }
     }
-    catch (std::exception stdEx)
+    catch (std::exception ioException)
     {
-        std::cerr << "error: " << stdEx.what() << "\n";
+        std::cerr << "error: " << ioException.what() << std::endl;
     }
-    catch (TCLAP::ArgException & tclEx)
+    catch (TCLAP::ArgException & commandLineException)
     {
-        std::cerr << "error: " << tclEx.error() << " for arg " << tclEx.argId() << std::endl;
+        std::cerr << "error: " << commandLineException.error() << " for arg " << commandLineException.argId() << std::endl;
     }
 }
