@@ -3,7 +3,7 @@
 #include <picojson.h>
 #include <tclap/CmdLine.h>
 
-namespace gameplay
+namespace converter
 {
     struct Namespace
     {
@@ -65,7 +65,7 @@ namespace gameplay
         stream << GetIndentation(newNamespace.depth) << "}\n\n";
     }
 
-    void ConvertAndExport(picojson::value & currentNode, gameplay::Namespace & currentNamespace, std::ofstream & stream)
+    void ConvertAndExport(picojson::value & currentNode, converter::Namespace & currentNamespace, std::ofstream & stream)
     {
         if (currentNode.is<picojson::array>())
         {
@@ -149,9 +149,9 @@ int main(int argc, char** argv)
 
             if (errors.empty())
             {
-                gameplay::Namespace rootNamespace("", -1);
+                converter::Namespace rootNamespace("", -1);
                 std::ofstream outputStream(outputFileArg.getValue());
-                gameplay::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
+                converter::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
             }
         }
         else
