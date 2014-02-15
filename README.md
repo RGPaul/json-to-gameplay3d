@@ -1,6 +1,6 @@
 #JSON to Gameplay3D Property converter
 
-Gameplay3D uses a bespoke Property format to load plain text data. However, many tools can already export data as JSON and many frameworks/api's exit to read/write it. This tool allows you to convert JSON directly to the Property format.
+Gameplay3D uses a bespoke Property format to load plain text data. However, many 3rd party tools/frameworks/api's export to JSON. This tool allows you to convert JSON directly to the Property format so you can use JSON in your content pipeline without having to support it in your Gameplay3D game.
 
 ### Pre-requisites
 - CMake
