@@ -42,6 +42,29 @@ namespace gameplay
         return std::string(depth * indentationSpaces, ' ');
     }
 
+    std::string GetFormattedNamespaceName(Namespace & namespaceToName, Namespace & parent)
+    {
+        std::string name = namespaceToName.name;
+
+        if (name.empty())
+        {
+            name = parent.name + "_" + std::to_string(parent.namespaces.size());
+        }
+
+        return name;
+    }
+
+    void BeginNamespaceScope(Namespace & newNamespace, Namespace & parent, std::ofstream & stream)
+    {
+        stream << GetIndentation(newNamespace.depth) << GetFormattedNamespaceName(newNamespace, parent) << "\n";
+        stream << GetIndentation(newNamespace.depth) << "{\n";
+    }
+
+    void EndNamespaceScope(Namespace & newNamespace, std::ofstream & stream)
+    {
+        stream << GetIndentation(newNamespace.depth) << "}\n\n";
+    }
+
     void ConvertAndExport(picojson::value & currentNode, gameplay::Namespace & currentNamespace, std::ofstream & stream)
     {
         if (currentNode.is<picojson::array>())
@@ -53,11 +76,10 @@ namespace gameplay
                 if (IsNamespaceType(arrayValue))
                 {
                     Namespace newNamespace(GetKeyName(arrayValue), currentNamespace.depth + 1);
-                    stream << GetIndentation(newNamespace.depth) << newNamespace.name << "\n";
-                    stream << GetIndentation(newNamespace.depth) << "{\n";
+                    BeginNamespaceScope(newNamespace, currentNamespace, stream);
                     ConvertAndExport(arrayValue, newNamespace, stream);
                     currentNamespace.namespaces.push_back(newNamespace);
-                    stream << GetIndentation(newNamespace.depth) << "}\n\n";
+                    EndNamespaceScope(newNamespace, stream);
                 }
                 else
                 {
@@ -79,8 +101,7 @@ namespace gameplay
                     newNamespace.name = valuePair.first;
                     newNamespace.depth = currentNamespace.depth + 1;
                     nextNamespace = &newNamespace;
-                    stream << GetIndentation(newNamespace.depth) << newNamespace.name << "\n";
-                    stream << GetIndentation(newNamespace.depth) << "{\n";
+                    BeginNamespaceScope(newNamespace, currentNamespace, stream);
                 }
                 else
                 {
@@ -92,7 +113,7 @@ namespace gameplay
                 if (nextNamespace == &newNamespace)
                 {
                     currentNamespace.namespaces.push_back(newNamespace);
-                    stream << GetIndentation(newNamespace.depth) << "}\n\n";
+                    EndNamespaceScope(newNamespace, stream);
                 }
             }
         }
