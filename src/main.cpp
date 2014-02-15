@@ -65,13 +65,6 @@ namespace converter
         std::vector<PropertyNamespace> namespaces;
     };
 
-    std::string GetKeyName(picojson::value const & node)
-    {
-        std::string keyName;
-        node.get(keyName);
-        return keyName;
-    }
-
     bool IsNamespaceType(picojson::value const & node)
     {
         return node.is<picojson::object>() || node.is<picojson::array>();
@@ -102,8 +95,9 @@ namespace converter
             stream << std::endl;
         }
 
-        stream << GetIndentation(newNamespace.depth) << GetFormattedNamespaceName(newNamespace, parent) << std::endl;
-        stream << GetIndentation(newNamespace.depth) << "{\n";
+        std::string const indentation = GetIndentation(newNamespace.depth);
+        stream << indentation << GetFormattedNamespaceName(newNamespace, parent) << std::endl;
+        stream << indentation << "{\n";
     }
 
     void EndNamespaceScope(PropertyNamespace & newNamespace, std::ofstream & stream)
@@ -121,7 +115,9 @@ namespace converter
             {
                 if (IsNamespaceType(arrayValue))
                 {
-                    PropertyNamespace newNamespace(GetKeyName(arrayValue), currentNamespace.depth + 1);
+                    std::string keyName;
+                    arrayValue.get(keyName);
+                    PropertyNamespace newNamespace(keyName, currentNamespace.depth + 1);
                     BeginNamespaceScope(newNamespace, currentNamespace, stream);
                     ConvertAndExport(arrayValue, newNamespace, stream);
                     currentNamespace.AddNamespace(newNamespace);
