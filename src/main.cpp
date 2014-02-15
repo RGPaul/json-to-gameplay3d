@@ -197,36 +197,44 @@ int main(int argc, char** argv)
         std::ifstream inputStream;
         inputStream.open(inputStreamArg.getValue(), std::ios::in);
         
-        std::string errors;
+        std::string errorMessage;
 
         if (inputStream)
         {
             picojson::value jsonDoc;
-            errors = picojson::parse(jsonDoc, inputStream);
+            errorMessage = picojson::parse(jsonDoc, inputStream);
 
-            if (errors.empty())
+            if (errorMessage.empty())
             {
                 converter::PropertyNamespace rootNamespace("", -1);
                 std::ofstream outputStream(outputFileArg.getValue());
-                converter::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
+
+                if (outputStream)
+                {
+                    converter::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
+                }
+                else
+                {
+                    errorMessage = "Failed to create output stream";
+                }
             }
         }
         else
         {
-            errors = "Failed to open input file";
+            errorMessage = "Failed to open input file";
         }
 
-        if (!errors.empty())
+        if (!errorMessage.empty())
         {
-            throw std::exception(errors.c_str());
+            throw std::exception(errorMessage.c_str());
         }
     }
     catch (std::exception ioException)
     {
-        std::cerr << "error: " << ioException.what() << std::endl;
+        std::cerr << "errorMessage: " << ioException.what() << std::endl;
     }
     catch (TCLAP::ArgException & commandLineException)
     {
-        std::cerr << "error: " << commandLineException.error() << " for arg " << commandLineException.argId() << std::endl;
+        std::cerr << "errorMessage: " << commandLineException.error() << " for arg " << commandLineException.argId() << std::endl;
     }
 }
