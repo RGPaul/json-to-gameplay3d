@@ -239,11 +239,11 @@ int main(int argc, char** argv)
 
         if (!errorMessage.empty())
         {
-            std::cerr << "errorMessage: " << errorMessage.c_str();
+            std::cerr << errorMessage.c_str() << std::endl;
         }
     }
     catch (TCLAP::ArgException & commandLineException)
     {
-        std::cerr << "errorMessage: " << commandLineException.error() << " for arg " << commandLineException.argId() << std::endl;
+        std::cerr << commandLineException.error() << " for arg " << commandLineException.argId() << std::endl;
     }
 }
