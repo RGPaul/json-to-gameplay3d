@@ -239,12 +239,8 @@ int main(int argc, char** argv)
 
         if (!errorMessage.empty())
         {
-            throw std::exception(errorMessage.c_str());
+            std::cerr << "errorMessage: " << errorMessage.c_str();
         }
-    }
-    catch (std::exception ioException)
-    {
-        std::cerr << "errorMessage: " << ioException.what() << std::endl;
     }
     catch (TCLAP::ArgException & commandLineException)
     {
