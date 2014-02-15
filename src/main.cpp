@@ -67,11 +67,13 @@ namespace converter
 
     bool IsNamespaceType(picojson::value const & node)
     {
+        // Treat arrays and objects as namespaces since the property format has no equivalent concepts
         return node.is<picojson::object>() || node.is<picojson::array>();
     }
 
     std::string GetIndentation(int depth)
     {
+        // Make indentation conform to that used in Gameplay3D samples
         static const int indentationSpaces = 4;
         return std::string(depth * indentationSpaces, ' ');
     }
@@ -80,6 +82,8 @@ namespace converter
     {
         std::string name = namespaceToName.name;
 
+        // The property format doesn't allow un-named namespaces so create a name using the parents name and this
+        // namespaces index into it
         if (name.empty())
         {
             name = parent.name + "_" + std::to_string(parent.GetNamespaceCount());
@@ -90,6 +94,7 @@ namespace converter
 
     void BeginNamespaceScope(PropertyNamespace & newNamespace, PropertyNamespace & parent, std::ofstream & stream)
     {
+        // Add vertical spacing between namespaces and values at the same depth
         if (parent.GetPreviousModification() != PropertyNamespace::Modification::None)
         {
             stream << std::endl;
@@ -115,6 +120,7 @@ namespace converter
             {
                 if (IsNamespaceType(arrayValue))
                 {
+                    // Create a nested namespace
                     std::string keyName;
                     arrayValue.get(keyName);
                     PropertyNamespace newNamespace(keyName, currentNamespace.depth + 1);
@@ -125,6 +131,8 @@ namespace converter
                 }
                 else
                 {
+                    // Array values are converted into key/value pairs within this namespace where
+                    // they key is the values index into the array
                     currentNamespace.AddValue(std::to_string(valueIndex), "");
                     ConvertAndExport(arrayValue, currentNamespace, stream);
                     ++valueIndex;
@@ -133,6 +141,9 @@ namespace converter
         }
         else if (currentNode.is<picojson::object>())
         {
+            // Same as arrays, creates nested namespaces and pairs, the pairs aren't indexed since
+            // they already have names
+
             for (auto & valuePair : currentNode.get<picojson::object>())
             {
                 PropertyNamespace * nextNamespace = &currentNamespace;
@@ -166,9 +177,13 @@ namespace converter
         }
         else
         {
+            // The entry for a value already exists in the current namespace and will always be the most recently
+            // added so just fill in the value
             ValuePair & valuePair = currentNamespace.GetLastValuePair();
             valuePair.second = currentNode.to_str();
 
+            // Add vertical spacing between namespaces and values at the same depth but allow sequential value
+            // declarations to group together
             if (currentNamespace.GetPreviousModification() == PropertyNamespace::Modification::NamespaceAdded)
             {
                 stream << std::endl;
@@ -192,7 +207,6 @@ int main(int argc, char** argv)
         
         std::ifstream inputStream;
         inputStream.open(inputStreamArg.getValue(), std::ios::in);
-        
         std::string errorMessage;
 
         if (inputStream)
@@ -203,12 +217,12 @@ int main(int argc, char** argv)
 
             if (errorMessage.empty())
             {
-                converter::PropertyNamespace rootNamespace("", -1);
                 std::ofstream outputStream(outputFileArg.getValue());
 
                 if (outputStream)
                 {
                     std::cout << "Converting..." << std::endl;
+                    converter::PropertyNamespace rootNamespace("", -1);
                     converter::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
                     std::cout << "Done" << std::endl;
                 }
