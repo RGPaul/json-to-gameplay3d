@@ -65,6 +65,13 @@ namespace converter
         std::vector<PropertyNamespace> namespaces;
     };
 
+    std::string ToString(int number)
+    {
+        std::ostringstream stringStream;
+        stringStream << number;
+        return stringStream.str();
+    }
+
     bool IsNamespaceType(picojson::value const & node)
     {
         // Treat arrays and objects as namespaces since the property format has no equivalent concepts
@@ -86,7 +93,7 @@ namespace converter
         // namespaces index into it
         if (name.empty())
         {
-            name = parent.name + "_" + std::to_string(parent.GetNamespaceCount());
+            name = parent.name + "_" + ToString(parent.GetNamespaceCount());
         }
 
         return name;
@@ -133,7 +140,7 @@ namespace converter
                 {
                     // Array values are converted into key/value pairs within this namespace where
                     // they key is the values index into the array
-                    currentNamespace.AddValue(std::to_string(valueIndex), "");
+                    currentNamespace.AddValue(ToString(valueIndex), "");
                     ConvertAndExport(arrayValue, currentNamespace, stream);
                     ++valueIndex;
                 }
