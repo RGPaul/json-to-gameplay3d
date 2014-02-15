@@ -5,22 +5,63 @@
 
 namespace converter
 {
-    struct Namespace
+    typedef std::pair<std::string, std::string> ValuePair;
+
+    class Namespace
     {
+    public:
+        enum class Modification
+        {
+            None,
+            ValueAdded,
+            NamespaceAdded
+        };
+
         Namespace()
             : depth(0)
+            , previousModification(Modification::None)
         {
         }
 
         Namespace(std::string const & name, int depth)
             : name(name)
             , depth(depth)
+            , previousModification(Modification::None)
         {
+        }
+
+        void AddNamespace(Namespace & namespaceToAdd)
+        {
+            namespaces.push_back(namespaceToAdd);
+            previousModification = Modification::NamespaceAdded;
+        }
+
+        void AddValue(std::string const name, std::string const value)
+        {
+            values.emplace_back(name, value);
+            previousModification = Modification::ValueAdded;
+        }
+
+        ValuePair & GetLastValuePair()
+        {
+            return values.back();
+        }
+
+        size_t GetNamespaceCount() const
+        {
+            return namespaces.size();
+        }
+
+        Modification GetPreviousModification() const
+        {
+            return previousModification;
         }
 
         int depth;
         std::string name;
-        std::vector<std::pair<std::string, std::string>> values;
+    private:
+        Modification previousModification;
+        std::vector<ValuePair> values;
         std::vector<Namespace> namespaces;
     };
 
@@ -48,7 +89,7 @@ namespace converter
 
         if (name.empty())
         {
-            name = parent.name + "_" + std::to_string(parent.namespaces.size());
+            name = parent.name + "_" + std::to_string(parent.GetNamespaceCount());
         }
 
         return name;
@@ -56,13 +97,18 @@ namespace converter
 
     void BeginNamespaceScope(Namespace & newNamespace, Namespace & parent, std::ofstream & stream)
     {
+        if (parent.GetPreviousModification() != Namespace::Modification::None)
+        {
+            stream << "\n";
+        }
+
         stream << GetIndentation(newNamespace.depth) << GetFormattedNamespaceName(newNamespace, parent) << "\n";
         stream << GetIndentation(newNamespace.depth) << "{\n";
     }
 
     void EndNamespaceScope(Namespace & newNamespace, std::ofstream & stream)
     {
-        stream << GetIndentation(newNamespace.depth) << "}\n\n";
+        stream << GetIndentation(newNamespace.depth) << "}\n";
     }
 
     void ConvertAndExport(picojson::value & currentNode, converter::Namespace & currentNamespace, std::ofstream & stream)
@@ -78,12 +124,12 @@ namespace converter
                     Namespace newNamespace(GetKeyName(arrayValue), currentNamespace.depth + 1);
                     BeginNamespaceScope(newNamespace, currentNamespace, stream);
                     ConvertAndExport(arrayValue, newNamespace, stream);
-                    currentNamespace.namespaces.push_back(newNamespace);
+                    currentNamespace.AddNamespace(newNamespace);
                     EndNamespaceScope(newNamespace, stream);
                 }
                 else
                 {
-                    currentNamespace.values.emplace_back(std::to_string(valueIndex), "");
+                    currentNamespace.AddValue(std::to_string(valueIndex), "");
                     ConvertAndExport(arrayValue, currentNamespace, stream);
                     ++valueIndex;
                 }
@@ -105,22 +151,33 @@ namespace converter
                 }
                 else
                 {
-                    nextNamespace->values.emplace_back(valuePair.first, "");
+                    if (currentNamespace.GetPreviousModification() == Namespace::Modification::NamespaceAdded)
+                    {
+                        stream << "\n";
+                    }
+
+                    nextNamespace->AddValue(valuePair.first, "");
                 }
                 
                 ConvertAndExport(valuePair.second, *nextNamespace, stream);
 
                 if (nextNamespace == &newNamespace)
                 {
-                    currentNamespace.namespaces.push_back(newNamespace);
+                    currentNamespace.AddNamespace(newNamespace);
                     EndNamespaceScope(newNamespace, stream);
                 }
             }
         }
         else
         {
-            auto & valuePair = currentNamespace.values.back();
+            ValuePair & valuePair = currentNamespace.GetLastValuePair();
             valuePair.second = currentNode.to_str();
+
+            if (currentNamespace.GetPreviousModification() == Namespace::Modification::NamespaceAdded)
+            {
+                stream << "\n";
+            }
+
             stream << GetIndentation(currentNamespace.depth + 1) << valuePair.first << " = " << valuePair.second << "\n";
         }
     }
