@@ -7,7 +7,7 @@ namespace converter
 {
     typedef std::pair<std::string, std::string> ValuePair;
 
-    class Namespace
+    class PropertyNamespace
     {
     public:
         enum class Modification
@@ -17,20 +17,20 @@ namespace converter
             NamespaceAdded
         };
 
-        Namespace()
+        PropertyNamespace()
             : depth(0)
             , previousModification(Modification::None)
         {
         }
 
-        Namespace(std::string const & name, int depth)
+        PropertyNamespace(std::string const & name, int depth)
             : name(name)
             , depth(depth)
             , previousModification(Modification::None)
         {
         }
 
-        void AddNamespace(Namespace & namespaceToAdd)
+        void AddNamespace(PropertyNamespace & namespaceToAdd)
         {
             namespaces.push_back(namespaceToAdd);
             previousModification = Modification::NamespaceAdded;
@@ -62,7 +62,7 @@ namespace converter
     private:
         Modification previousModification;
         std::vector<ValuePair> values;
-        std::vector<Namespace> namespaces;
+        std::vector<PropertyNamespace> namespaces;
     };
 
     std::string GetKeyName(picojson::value const & node)
@@ -83,7 +83,7 @@ namespace converter
         return std::string(depth * indentationSpaces, ' ');
     }
 
-    std::string GetFormattedNamespaceName(Namespace & namespaceToName, Namespace & parent)
+    std::string GetFormattedNamespaceName(PropertyNamespace & namespaceToName, PropertyNamespace & parent)
     {
         std::string name = namespaceToName.name;
 
@@ -95,9 +95,9 @@ namespace converter
         return name;
     }
 
-    void BeginNamespaceScope(Namespace & newNamespace, Namespace & parent, std::ofstream & stream)
+    void BeginNamespaceScope(PropertyNamespace & newNamespace, PropertyNamespace & parent, std::ofstream & stream)
     {
-        if (parent.GetPreviousModification() != Namespace::Modification::None)
+        if (parent.GetPreviousModification() != PropertyNamespace::Modification::None)
         {
             stream << "\n";
         }
@@ -106,12 +106,12 @@ namespace converter
         stream << GetIndentation(newNamespace.depth) << "{\n";
     }
 
-    void EndNamespaceScope(Namespace & newNamespace, std::ofstream & stream)
+    void EndNamespaceScope(PropertyNamespace & newNamespace, std::ofstream & stream)
     {
         stream << GetIndentation(newNamespace.depth) << "}\n";
     }
 
-    void ConvertAndExport(picojson::value & currentNode, converter::Namespace & currentNamespace, std::ofstream & stream)
+    void ConvertAndExport(picojson::value & currentNode, converter::PropertyNamespace & currentNamespace, std::ofstream & stream)
     {
         if (currentNode.is<picojson::array>())
         {
@@ -121,7 +121,7 @@ namespace converter
             {
                 if (IsNamespaceType(arrayValue))
                 {
-                    Namespace newNamespace(GetKeyName(arrayValue), currentNamespace.depth + 1);
+                    PropertyNamespace newNamespace(GetKeyName(arrayValue), currentNamespace.depth + 1);
                     BeginNamespaceScope(newNamespace, currentNamespace, stream);
                     ConvertAndExport(arrayValue, newNamespace, stream);
                     currentNamespace.AddNamespace(newNamespace);
@@ -139,8 +139,8 @@ namespace converter
         {
             for (auto & valuePair : currentNode.get<picojson::object>())
             {
-                Namespace * nextNamespace = &currentNamespace;
-                Namespace newNamespace;
+                PropertyNamespace * nextNamespace = &currentNamespace;
+                PropertyNamespace newNamespace;
 
                 if (IsNamespaceType(valuePair.second))
                 {
@@ -151,7 +151,7 @@ namespace converter
                 }
                 else
                 {
-                    if (currentNamespace.GetPreviousModification() == Namespace::Modification::NamespaceAdded)
+                    if (currentNamespace.GetPreviousModification() == PropertyNamespace::Modification::NamespaceAdded)
                     {
                         stream << "\n";
                     }
@@ -173,7 +173,7 @@ namespace converter
             ValuePair & valuePair = currentNamespace.GetLastValuePair();
             valuePair.second = currentNode.to_str();
 
-            if (currentNamespace.GetPreviousModification() == Namespace::Modification::NamespaceAdded)
+            if (currentNamespace.GetPreviousModification() == PropertyNamespace::Modification::NamespaceAdded)
             {
                 stream << "\n";
             }
@@ -206,7 +206,7 @@ int main(int argc, char** argv)
 
             if (errors.empty())
             {
-                converter::Namespace rootNamespace("", -1);
+                converter::PropertyNamespace rootNamespace("", -1);
                 std::ofstream outputStream(outputFileArg.getValue());
                 converter::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
             }
