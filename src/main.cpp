@@ -99,10 +99,10 @@ namespace converter
     {
         if (parent.GetPreviousModification() != PropertyNamespace::Modification::None)
         {
-            stream << "\n";
+            stream << std::endl;
         }
 
-        stream << GetIndentation(newNamespace.depth) << GetFormattedNamespaceName(newNamespace, parent) << "\n";
+        stream << GetIndentation(newNamespace.depth) << GetFormattedNamespaceName(newNamespace, parent) << std::endl;
         stream << GetIndentation(newNamespace.depth) << "{\n";
     }
 
@@ -153,7 +153,7 @@ namespace converter
                 {
                     if (currentNamespace.GetPreviousModification() == PropertyNamespace::Modification::NamespaceAdded)
                     {
-                        stream << "\n";
+                        stream << std::endl;
                     }
 
                     nextNamespace->AddValue(valuePair.first, "");
@@ -175,10 +175,10 @@ namespace converter
 
             if (currentNamespace.GetPreviousModification() == PropertyNamespace::Modification::NamespaceAdded)
             {
-                stream << "\n";
+                stream << std::endl;
             }
 
-            stream << GetIndentation(currentNamespace.depth + 1) << valuePair.first << " = " << valuePair.second << "\n";
+            stream << GetIndentation(currentNamespace.depth + 1) << valuePair.first << " = " << valuePair.second << std::endl;
         }
     }
 }
@@ -202,6 +202,7 @@ int main(int argc, char** argv)
         if (inputStream)
         {
             picojson::value jsonDoc;
+            std::cout << "Parsing JSON..." << std::endl;
             errorMessage = picojson::parse(jsonDoc, inputStream);
 
             if (errorMessage.empty())
@@ -211,7 +212,9 @@ int main(int argc, char** argv)
 
                 if (outputStream)
                 {
+                    std::cout << "Converting..." << std::endl;
                     converter::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
+                    std::cout << "Done" << std::endl;
                 }
                 else
                 {
