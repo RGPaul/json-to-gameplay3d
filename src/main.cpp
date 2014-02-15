@@ -119,17 +119,28 @@ int main(int argc, char** argv)
         std::ifstream inputStream;
         inputStream.open(inputStreamArg.getValue(), std::ios::in);
         
+        std::string errors;
+
         if (inputStream)
         {
             picojson::value jsonDoc;
-            picojson::parse(jsonDoc, inputStream);
-            gameplay::Namespace rootNamespace("", -1);
-            std::ofstream outputStream(outputFileArg.getValue());
-            gameplay::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
+            errors = picojson::parse(jsonDoc, inputStream);
+
+            if (errors.empty())
+            {
+                gameplay::Namespace rootNamespace("", -1);
+                std::ofstream outputStream(outputFileArg.getValue());
+                gameplay::ConvertAndExport(jsonDoc, rootNamespace, outputStream);
+            }
         }
         else
         {
-            throw std::exception("Failed to open input file");
+            errors = "Failed to open input file";
+        }
+
+        if (!errors.empty())
+        {
+            throw std::exception(errors.c_str());
         }
     }
     catch (std::exception stdEx)
